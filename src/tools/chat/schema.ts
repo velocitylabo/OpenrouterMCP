@@ -53,12 +53,43 @@ export const FunctionDefinitionSchema = z.object({
 });
 
 /**
- * Schema for a tool definition (OpenAI-compatible)
+ * Schema for a tool definition (OpenAI-compatible function tool)
  */
-export const ToolDefinitionSchema = z.object({
+export const FunctionToolSchema = z.object({
   type: z.literal('function'),
   function: FunctionDefinitionSchema,
 });
+
+/**
+ * Schema for OpenRouter server tools (e.g., openrouter:web_search).
+ * These are OpenRouter-native tools that are passed through to the API
+ * without requiring function definitions.
+ * @see https://openrouter.ai/docs/guides/features/server-tools/web-search
+ */
+export const ServerToolSchema = z.object({
+  type: z.string().regex(/^openrouter:/, 'Server tool type must start with "openrouter:"'),
+  parameters: z.object({
+    engine: z.enum(['auto', 'native', 'exa', 'firecrawl', 'parallel']).optional(),
+    max_results: z.number().int().min(1).max(25).optional(),
+    max_total_results: z.number().int().positive().optional(),
+    search_context_size: z.enum(['low', 'medium', 'high']).optional(),
+    user_location: z.object({
+      type: z.literal('approximate').optional(),
+      city: z.string().optional(),
+      region: z.string().optional(),
+      country: z.string().optional(),
+      timezone: z.string().optional(),
+    }).optional(),
+    allowed_domains: z.array(z.string()).optional(),
+    excluded_domains: z.array(z.string()).optional(),
+  }).optional(),
+});
+
+/**
+ * Schema for a tool definition — either an OpenAI-compatible function tool
+ * or an OpenRouter server tool (e.g., openrouter:web_search).
+ */
+export const ToolDefinitionSchema = z.union([FunctionToolSchema, ServerToolSchema]);
 
 export type ToolDefinition = z.infer<typeof ToolDefinitionSchema>;
 
@@ -159,7 +190,7 @@ const ChatInputBaseSchema = z.object({
   tools: z
     .array(ToolDefinitionSchema)
     .optional()
-    .describe('Array of OpenAI-compatible function definitions'),
+    .describe('Array of tool definitions. Supports OpenAI-compatible function tools and OpenRouter server tools (e.g., {"type": "openrouter:web_search"}).'),
 
   /** Tool choice parameter */
   tool_choice: ToolChoiceSchema

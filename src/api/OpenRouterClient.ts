@@ -120,14 +120,20 @@ export interface ChatCompletionRequest {
   repetition_penalty?: number;
   seed?: number;
   stop?: string | string[];
-  tools?: Array<{
-    type: 'function';
-    function: {
-      name: string;
-      description?: string;
-      parameters?: Record<string, unknown>;
-    };
-  }>;
+  tools?: Array<
+    | {
+        type: 'function';
+        function: {
+          name: string;
+          description?: string;
+          parameters?: Record<string, unknown>;
+        };
+      }
+    | {
+        type: string; // OpenRouter server tools (e.g., "openrouter:web_search")
+        parameters?: Record<string, unknown>;
+      }
+  >;
   tool_choice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } };
   parallel_tool_calls?: boolean;
   response_format?: { type: 'text' | 'json_object' | 'json_schema'; json_schema?: { name: string; strict?: boolean; schema: Record<string, unknown> } };
