@@ -130,7 +130,7 @@ export interface ChatCompletionRequest {
         };
       }
     | {
-        type: string; // OpenRouter server tools (e.g., "openrouter:web_search")
+        type: `openrouter:${string}`;
         parameters?: Record<string, unknown>;
       }
   >;

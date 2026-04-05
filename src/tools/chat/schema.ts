@@ -67,7 +67,10 @@ export const FunctionToolSchema = z.object({
  * @see https://openrouter.ai/docs/guides/features/server-tools/web-search
  */
 export const ServerToolSchema = z.object({
-  type: z.string().regex(/^openrouter:/, 'Server tool type must start with "openrouter:"'),
+  type: z.custom<`openrouter:${string}`>(
+    (val) => typeof val === 'string' && /^openrouter:.+$/.test(val),
+    'Server tool type must start with "openrouter:" and include a tool name',
+  ),
   parameters: z.object({
     engine: z.enum(['auto', 'native', 'exa', 'firecrawl', 'parallel']).optional(),
     max_results: z.number().int().min(1).max(25).optional(),
