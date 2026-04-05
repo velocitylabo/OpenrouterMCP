@@ -180,6 +180,9 @@ export class OpenRouterServer {
    */
   private zodToJsonSchema(schema: z.ZodType): JsonSchema {
     // Basic conversion - for complex schemas, consider using zod-to-json-schema library
+    if (schema instanceof z.ZodEffects) {
+      return this.zodToJsonSchema(schema.innerType());
+    }
     if (schema instanceof z.ZodObject) {
       const shape = schema.shape as Record<string, z.ZodType>;
       const properties: Record<string, object> = {};
@@ -232,6 +235,22 @@ export class OpenRouterServer {
     }
     if (zodType instanceof z.ZodObject) {
       return this.zodToJsonSchema(zodType);
+    }
+    if (zodType instanceof z.ZodLiteral) {
+      return { type: typeof zodType.value, const: zodType.value };
+    }
+    if (zodType instanceof z.ZodUnion) {
+      return {
+        anyOf: (zodType.options as z.ZodType[]).map((opt) =>
+          opt instanceof z.ZodObject
+            ? this.zodToJsonSchema(opt)
+            : this.zodTypeToJsonSchema(opt),
+        ),
+      };
+    }
+    if (zodType instanceof z.ZodEffects) {
+      // z.custom() produces ZodEffects — treat as string to allow passthrough
+      return { type: 'string' };
     }
 
     return {};
